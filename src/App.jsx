@@ -1,4 +1,4 @@
-import { useState } from "react";
+                  import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
@@ -26,6 +26,11 @@ const urgencyBg = (days) => {
   if (days <= 7) return "#FFFBF0";
   return "#F0FFF7";
 };
+
+const weeklyFromAvg = (avg) =>
+  [0.8, 1.1, 0.9, 1.2, 1.0, 1.35, 1.05].map(m =>
+    Math.max(Math.round(avg * m), 0)
+  );
 
 export default function App() {
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
@@ -154,6 +159,7 @@ Return ONLY valid JSON in this exact shape, no markdown:
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+
       <header style={{
         background: "linear-gradient(135deg, #FF6B00 0%, #FF8C38 100%)",
         padding: "16px 20px", color: "#fff",
@@ -230,6 +236,7 @@ Return ONLY valid JSON in this exact shape, no markdown:
                 </div>
               ))}
             </div>
+
             <div style={{ background: "#fff", borderRadius: 14, padding: 20, boxShadow: "var(--shadow)", border: "1px solid var(--border)", marginBottom: 20 }}>
               <h3 style={{ marginBottom: 16, fontSize: 16 }}>Days Until Stockout</h3>
               <ResponsiveContainer width="100%" height={200}>
@@ -243,6 +250,7 @@ Return ONLY valid JSON in this exact shape, no markdown:
                 </BarChart>
               </ResponsiveContainer>
             </div>
+
             {criticalItems.length > 0 && (
               <div style={{ background: "#FFF0EE", border: "1px solid #FFCDD2", borderRadius: 14, padding: 16 }}>
                 <h3 style={{ color: "#D93025", marginBottom: 12, fontSize: 15 }}>🚨 Critical — Reorder Today</h3>
@@ -280,7 +288,6 @@ Return ONLY valid JSON in this exact shape, no markdown:
               }}>Add Product</button>
             </div>
 
-            {/* 🔍 Search Bar */}
             <div style={{ marginBottom: 14, position: "relative" }}>
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔍</span>
               <input
@@ -320,12 +327,18 @@ Return ONLY valid JSON in this exact shape, no markdown:
               {filteredProducts.map(p => {
                 const days = daysUntilStockout(p.stock, p.dailySales);
                 const isEditing = editingId === p.id;
+                const uColor = urgencyColor(days);
+                const weekly = weeklyFromAvg(p.dailySales);
+                const weekMax = Math.max(...weekly, 1);
+                const maxStock = Math.max(p.stock * 2, 20);
+
                 return (
                   <div key={p.id} style={{
                     background: urgencyBg(days),
-                    border: `1px solid ${urgencyColor(days)}33`,
+                    border: `1px solid ${uColor}33`,
                     borderRadius: 12, padding: "14px 16px",
                   }}>
+
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isEditing ? 12 : 0 }}>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
@@ -335,8 +348,8 @@ Return ONLY valid JSON in this exact shape, no markdown:
                           </div>
                         )}
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: urgencyColor(days), fontWeight: 700, fontSize: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: 8 }}>
+                        <span style={{ color: uColor, fontWeight: 700, fontSize: 14 }}>
                           {days >= 999 ? "∞" : days + " days"}
                         </span>
                         {!isEditing && (
@@ -351,6 +364,68 @@ Return ONLY valid JSON in this exact shape, no markdown:
                         }}>Remove</button>
                       </div>
                     </div>
+
+                    {!isEditing && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#999", marginBottom: 3 }}>
+                            <span>Stock level</span>
+                            <span>{Math.round((p.stock / maxStock) * 100)}%</span>
+                          </div>
+                          <div style={{ height: 5, background: "#e8e0d8", borderRadius: 99 }}>
+                            <div style={{
+                              height: "100%",
+                              width: `${Math.min((p.stock / maxStock) * 100, 100)}%`,
+                              background: uColor,
+                              borderRadius: 99,
+                            }} />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#999", marginBottom: 4 }}>
+                            <span>Daily sales · this week</span>
+                            <span style={{ color: "#FF6B00", fontWeight: 700 }}>avg {p.dailySales}/day</span>
+                          </div>
+                          <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 24 }}>
+                            {weekly.map((v, i) => (
+                              <div key={i} style={{
+                                flex: 1,
+                                height: `${Math.max((v / weekMax) * 24, 3)}px`,
+                                background: i === 6 ? "#FF6B00" : "#FF6B0077",
+                                borderRadius: "3px 3px 0 0",
+                              }} />
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: 3, marginTop: 3 }}>
+                            {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                              <div key={i} style={{
+                                flex: 1, textAlign: "center", fontSize: 9,
+                                color: i === 6 ? "#FF6B00" : "#bbb",
+                                fontWeight: i === 6 ? 700 : 400,
+                              }}>{d}</div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#999", marginBottom: 3 }}>
+                            <span>Price</span>
+                            <span style={{ color: "#6366f1", fontWeight: 700 }}>₹{p.price}</span>
+                          </div>
+                          <div style={{ height: 5, background: "#e8e0d8", borderRadius: 99 }}>
+                            <div style={{
+                              height: "100%",
+                              width: `${Math.min((p.price / 500) * 100, 100)}%`,
+                              background: "#6366f1",
+                              borderRadius: 99,
+                            }} />
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
 
                     {isEditing && (
                       <div>
@@ -380,6 +455,7 @@ Return ONLY valid JSON in this exact shape, no markdown:
                         </div>
                       </div>
                     )}
+
                   </div>
                 );
               })}
@@ -439,6 +515,7 @@ Return ONLY valid JSON in this exact shape, no markdown:
             )}
           </div>
         )}
+
       </main>
 
       <footer style={{ textAlign: "center", padding: "24px", color: "#999", fontSize: 12, marginTop: 20 }}>
@@ -446,4 +523,4 @@ Return ONLY valid JSON in this exact shape, no markdown:
       </footer>
     </div>
   );
-}
+}        
